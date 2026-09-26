@@ -60,4 +60,26 @@ This enables **lazy migration** — when a document is read, check `_schemaVersi
 
 ---
 
+## `faultReports` collection
+
+**Path:** `/faultReports/{reportId}`
+**Access:** Owner-only. Owners can create and read their reports; the only permitted update is changing `status` from `open` to `resolved`. Hard deletes are denied.
+
+| Field            | Type                                                  | Required | Description                                                       |
+| ---------------- | ----------------------------------------------------- | -------- | ----------------------------------------------------------------- |
+| `uid`            | `string`                                              | Yes      | Firebase Auth UID of the report owner                             |
+| `title`          | `string`                                              | Yes      | Trimmed report title (3–80 characters)                            |
+| `category`       | `'connection' \| 'speed' \| 'equipment' \| 'billing'` | Yes      | Fault category; immutable after creation                          |
+| `description`    | `string`                                              | Yes      | Trimmed fault description (10–500 characters)                     |
+| `status`         | `'open' \| 'resolved'`                                | Yes      | Set to `open` on creation; may only transition to `resolved`      |
+| `createdAt`      | `Timestamp`                                           | Yes      | Server-generated creation time; immutable                         |
+| `deletedAt`      | `Timestamp \| null`                                   | Yes      | `null` on creation; non-null reports are excluded from user lists |
+| `_schemaVersion` | `1`                                                   | Yes      | Schema version for lazy migration                                 |
+
+**Query:** The signed-in user's live list filters by `uid` and `deletedAt == null`, then orders by `createdAt` descending.
+
+**Composite index:** `uid ASC`, `deletedAt ASC`, `createdAt DESC` with collection query scope.
+
+---
+
 <!-- Add new collection schemas below -->

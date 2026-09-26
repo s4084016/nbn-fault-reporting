@@ -11,7 +11,7 @@ import {
 } from 'firebase/firestore'
 
 interface UseCollectionResult<T> {
-  data: T[]
+  data: Array<T & { id: string }>
   loading: boolean
   error: Error | null
 }
@@ -26,7 +26,7 @@ export function useCollection<T extends DocumentData>(
   collectionRef: CollectionReference<T>,
   ...queryConstraints: QueryConstraint[]
 ): UseCollectionResult<T> {
-  const [data, setData] = useState<T[]>([])
+  const [data, setData] = useState<Array<T & { id: string }>>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
@@ -39,7 +39,7 @@ export function useCollection<T extends DocumentData>(
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        setData(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })) as T[])
+        setData(snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() })))
         setLoading(false)
       },
       (err) => {
