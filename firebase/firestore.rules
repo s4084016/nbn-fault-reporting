@@ -72,6 +72,38 @@ service cloud.firestore {
       allow delete: if false; // soft-delete only — set deletedAt instead
     }
 
+    // faultReports/{reportId}
+    // Users can lodge, read and resolve only their own fault reports.
+    match /faultReports/{reportId} {
+      allow read: if isAuthenticated() && isOwner(resource.data.uid) && notDeleted();
+
+      allow create: if isAuthenticated() && isOwner(request.resource.data.uid)
+        && request.resource.data.keys().hasAll(['uid', 'title', 'category', 'description', 'status', 'createdAt', 'deletedAt', '_schemaVersion'])
+        && request.resource.data.keys().hasOnly(['uid', 'title', 'category', 'description', 'status', 'createdAt', 'deletedAt', '_schemaVersion'])
+        && request.resource.data.uid is string
+        && request.resource.data.title is string
+        && request.resource.data.title.size() >= 3
+        && request.resource.data.title.size() <= 80
+        && request.resource.data.category in ['connection', 'speed', 'equipment', 'billing']
+        && request.resource.data.description is string
+        && request.resource.data.description.size() >= 10
+        && request.resource.data.description.size() <= 500
+        && request.resource.data.status == 'open'
+        && request.resource.data.createdAt is timestamp
+        && request.resource.data.deletedAt == null
+        && request.resource.data._schemaVersion == 1;
+
+      allow update: if isAuthenticated() && isOwner(resource.data.uid)
+        && request.resource.data.uid == resource.data.uid
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.category == resource.data.category
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status'])
+        && resource.data.status == 'open'
+        && request.resource.data.status == 'resolved';
+
+      allow delete: if false;
+    }
+
     // ── Default deny ───────────────────────────────────────────────────────
     match /{document=**} {
       allow read, write: if false;
